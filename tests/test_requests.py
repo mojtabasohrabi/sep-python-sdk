@@ -38,14 +38,14 @@ def test_optional_fields_are_named_as_in_the_guide() -> None:
         token_expiry_minutes=60,
         allowed_cards=cards,
         extra_data=["a", "b"],
-        session_key="key-1",
+        session_key="123456789",
     ).to_payload("0000")
     assert payload["Wage"] == 500
     assert payload["CellNumber"] == "9120000000"
     assert payload["TokenExpiryInMin"] == 60
     assert payload["HashedCardNumber"] == "|".join(cards)
     assert (payload["ResNum1"], payload["ResNum2"]) == ("a", "b")
-    assert payload["TxnRandomSessionKey"] == "key-1"
+    assert payload["TxnRandomSessionKey"] == 123456789
     assert "TranType" not in payload
 
 

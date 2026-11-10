@@ -35,6 +35,7 @@ MAX_EXTRA_DATA_ITEMS: Final = 4
 MAX_EXTRA_DATA_LENGTH: Final = 50
 MAX_ALLOWED_CARDS: Final = 10
 MAX_SETTLEMENT_ITEMS: Final = 9
+MAX_SESSION_KEY: Final = (1 << 63) - 1
 PURCHASE_ID_LENGTH: Final = 30
 #: The purchase id of an ordinary (non-government) settlement line in a mixed request.
 NO_PURCHASE_ID: Final = "0" * PURCHASE_ID_LENGTH

@@ -185,7 +185,7 @@ class TestVerifyAndReverse:
         with pytest.raises(TransactionNotFoundError):
             client.verify_transaction(ref)
         with pytest.raises(TransactionNotFoundError):
-            client.verify_transaction(ref, session_key="someone-elses-key")
+            client.verify_transaction(ref, session_key="1" if key != "1" else "2")
         assert client.verify_transaction(ref, session_key=key).amount == 12_000
 
     def test_unknown_receipt(self, client: SepClient) -> None:

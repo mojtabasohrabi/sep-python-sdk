@@ -6,6 +6,22 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-10
+
+### Fixed
+
+- Serialize `TxnRandomSessionKey` as a positive signed 64-bit JSON integer for token,
+  verify and reverse in both clients. Version 1.0.0 sent hexadecimal text, which the
+  real verify service rejected with HTTP 400 after the customer had paid.
+- Generate and derive decimal session keys; keep the helpers' string return type.
+  Accept integer or decimal-text input and reject invalid keys before network I/O.
+- Make the fake gateway reject the same invalid wire formats as SEP.
+- Allow `derive_session_key(..., namespace=...)` to preserve an application's existing
+  HMAC domain and already-issued numeric keys while adopting the SDK helper.
+
+Existing hexadecimal keys cannot be sent unchanged. Reconcile their in-flight payments
+before switching key generation; do not retry verification by automatically omitting a key.
+
 ## [1.0.0] - 2026-11-10
 
 ### Added

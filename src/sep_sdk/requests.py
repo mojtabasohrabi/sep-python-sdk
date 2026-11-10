@@ -23,6 +23,7 @@ from sep_sdk.validation import (
     normalize_card_hash,
     normalize_cell_number,
     normalize_iban,
+    normalize_session_key,
     require_http_url,
     require_int,
     require_text,
@@ -77,7 +78,7 @@ class TokenRequest:
     #: Up to four free-form strings (50 chars each), visible only in Saman's report panel.
     extra_data: Sequence[str] = ()
     #: ``TxnRandomSessionKey``: ties the later verify call to this payment.
-    session_key: str | None = None
+    session_key: str | int | None = None
     #: Multi-account settlement lines (at most nine).
     settlement: Sequence[SettlementItem] = ()
     #: A government purchase: the first settlement line must carry the government IBAN
@@ -109,7 +110,7 @@ class TokenRequest:
                 maximum=MAX_TOKEN_EXPIRY_MINUTES,
             )
         if self.session_key is not None:
-            require_text("session_key", self.session_key)
+            normalize_session_key(self.session_key)
         self._normalize_cards()
         self._normalize_extra_data()
         self._normalize_settlement()
@@ -167,7 +168,7 @@ class TokenRequest:
         for index, item in enumerate(self.extra_data, start=1):
             payload[f"ResNum{index}"] = item
         if self.session_key is not None:
-            payload["TxnRandomSessionKey"] = self.session_key
+            payload["TxnRandomSessionKey"] = normalize_session_key(self.session_key)
         if self.government:
             payload["TranType"] = "Government"
         if self.settlement:

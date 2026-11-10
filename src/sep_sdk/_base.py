@@ -34,7 +34,7 @@ from sep_sdk.redirect import render_redirect_form
 from sep_sdk.requests import TokenRequest
 from sep_sdk.responses import CallbackData, Token, TransactionResult
 from sep_sdk.retry import RetryPolicy
-from sep_sdk.validation import require_int, to_ascii_digits
+from sep_sdk.validation import normalize_session_key, require_int, to_ascii_digits
 
 logger = logging.getLogger("sep_sdk")
 
@@ -83,12 +83,12 @@ class ClientBase:
             raise SepValidationError("create_token() needs a TokenRequest.")
         return request.to_payload(self.terminal_id)
 
-    def _reference_payload(self, ref_num: str, session_key: str | None) -> dict[str, Any]:
+    def _reference_payload(self, ref_num: str, session_key: str | int | None) -> dict[str, Any]:
         if not isinstance(ref_num, str) or not ref_num.strip():
             raise SepValidationError("ref_num must be the receipt string from the callback.")
         payload: dict[str, Any] = {"RefNum": ref_num, "TerminalNumber": int(self.terminal_id)}
         if session_key is not None:
-            payload["TxnRandomSessionKey"] = session_key
+            payload["TxnRandomSessionKey"] = normalize_session_key(session_key)
         return payload
 
     # --- endpoint selection ----------------------------------------------

@@ -341,6 +341,15 @@ key = generate_session_key()                       # random; store it with the o
 key = derive_session_key(SERVER_SECRET, order_id)  # or recompute it later, nothing to store
 ```
 
+The helpers return decimal text; integers are also accepted. The SDK validates the
+range `1..2**63-1` and sends a JSON number in token, verify and reverse requests.
+Hexadecimal text, booleans, floats and out-of-range keys are rejected locally.
+
+When migrating an application's existing numeric HMAC keys, use a matching
+`namespace` in `derive_session_key` so in-flight orders keep the same key.
+Version 1.0.0's hexadecimal keys need reconciliation before upgrading; never silently
+drop a key to get verification to pass.
+
 Pass it as `TokenRequest(session_key=key)` and again as
 `verify_callback(..., session_key=key)`. If Saman rejects the extra field for your terminal,
 simply don't send it. (The in-memory fake treats a missing or wrong key as "transaction not

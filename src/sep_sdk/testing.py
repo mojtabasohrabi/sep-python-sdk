@@ -24,6 +24,7 @@ from typing import Any, Literal
 
 import httpx
 
+from sep_sdk.constants import MAX_SESSION_KEY
 from sep_sdk.endpoints import Endpoints
 from sep_sdk.enums import ResultCode, TransactionState, TransactionStatus
 
@@ -50,7 +51,7 @@ class _Session:
     res_num: str
     amount: int
     redirect_url: str
-    session_key: str | None
+    session_key: int | None
     ref_num: str = ""
     paid_amount: int = 0
     verified: bool = False
@@ -155,6 +156,12 @@ class FakeSepGateway:
             return httpx.Response(failure.status_code or 503, json={"error": "injected"})
         if operation == "unknown" or not self._path_allowed(operation, request.url.path):
             return httpx.Response(404, json={"error": "not found"})
+        key = body.get("TxnRandomSessionKey")
+        if key is not None and (type(key) is not int or not 0 < key <= MAX_SESSION_KEY):
+            return httpx.Response(
+                400,
+                json={"ModelState": {"model.TxnRandomSessionKey": ["An error has occurred."]}},
+            )
         if operation == "token":
             return self._token(body)
         return self._transaction(operation, body)

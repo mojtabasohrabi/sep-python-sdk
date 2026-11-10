@@ -72,6 +72,8 @@ sep_sdk = ["py.typed"]
 line-length = 100
 target-version = "py310"
 src = ["src", "tests"]
+# README snippets are illustrative; format executable Python sources only.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RET", "PL", "RUF", "N", "A", "PT", "T20"]

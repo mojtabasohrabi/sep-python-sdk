@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 
+from sep_sdk.constants import MAX_SESSION_KEY
 from sep_sdk.errors import SepValidationError
 
 _DIGIT_TRANSLATION = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
@@ -46,6 +47,15 @@ def require_text(name: str, value: object, *, max_length: int | None = None) -> 
         raise SepValidationError(f"{name} must not contain control characters.")
     if max_length is not None and len(value) > max_length:
         raise SepValidationError(f"{name} must be at most {max_length} characters.")
+    return value
+
+
+def normalize_session_key(value: object) -> int:
+    """SEP expects a positive Int64; decimal text is accepted by the Python API."""
+    if isinstance(value, str) and re.fullmatch(r"[0-9]{1,19}", value):
+        value = int(value)
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 < value <= MAX_SESSION_KEY:
+        raise SepValidationError("session_key must be a positive signed 64-bit integer.")
     return value
 
 

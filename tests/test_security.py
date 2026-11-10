@@ -1,4 +1,6 @@
 import hashlib
+import hmac
+from unittest.mock import Mock
 
 import pytest
 
@@ -17,11 +19,12 @@ def test_card_hash_needs_sixteen_digits(value: str) -> None:
         hash_card_number(value)
 
 
-def test_generated_keys_are_random_hex() -> None:
+def test_generated_keys_are_random_decimal_int64_values() -> None:
     first, second = generate_session_key(), generate_session_key()
     assert first != second
-    assert len(first) == 32
-    int(first, 16)
+    assert first.isascii()
+    assert first.isdecimal()
+    assert 0 < int(first) < 2**63
 
 
 def test_derived_keys_are_stable_and_scoped() -> None:
@@ -29,7 +32,29 @@ def test_derived_keys_are_stable_and_scoped() -> None:
     assert key == derive_session_key(b"server-secret", "order-1")
     assert key != derive_session_key("server-secret", "order-2")
     assert key != derive_session_key("other-secret", "order-1")
-    assert len(key) == 32
+    assert key.isascii()
+    assert key.isdecimal()
+    assert 0 < int(key) < 2**63
+
+
+def test_a_namespace_preserves_the_existing_application_key() -> None:
+    digest = hmac.new(b"server-secret", b"saman-session:order-1", hashlib.sha256).digest()
+    expected = str((int.from_bytes(digest[:8], "big") >> 1) or 1)
+    assert derive_session_key("server-secret", "order-1", namespace="saman-session") == expected
+    assert expected != derive_session_key("server-secret", "order-1")
+
+
+@pytest.mark.parametrize(("byte", "expected"), [(0, "1"), (255, str(2**63 - 1))])
+def test_derived_key_bounds(byte: int, expected: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    digest = Mock()
+    digest.digest.return_value = bytes([byte]) * 32
+    monkeypatch.setattr("sep_sdk.security.hmac.new", Mock(return_value=digest))
+    assert derive_session_key("secret", "order") == expected
+
+
+def test_an_empty_namespace_is_refused() -> None:
+    with pytest.raises(SepValidationError, match="namespace"):
+        derive_session_key("secret", "order", namespace="")
 
 
 def test_derived_keys_need_a_secret() -> None:

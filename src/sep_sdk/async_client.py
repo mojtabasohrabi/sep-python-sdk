@@ -67,14 +67,14 @@ class AsyncSepClient(ClientBase):
         return self._finish_token(request, response)
 
     async def verify_transaction(
-        self, ref_num: str, *, session_key: str | None = None
+        self, ref_num: str, *, session_key: str | int | None = None
     ) -> TransactionResult:
         """Confirm a receipt with the gateway (guide step 9). Do this within 30 minutes."""
         response = await self._post("verify", self._reference_payload(ref_num, session_key))
         return self._finish_transaction(response, "verify")
 
     async def reverse_transaction(
-        self, ref_num: str, *, session_key: str | None = None
+        self, ref_num: str, *, session_key: str | int | None = None
     ) -> TransactionResult:
         """Ask for the money back, up to 50 minutes after a verified payment (guide step 10)."""
         response = await self._post("reverse", self._reference_payload(ref_num, session_key))
@@ -85,7 +85,7 @@ class AsyncSepClient(ClientBase):
         callback: CallbackData,
         *,
         expected_amount: int,
-        session_key: str | None = None,
+        session_key: str | int | None = None,
         reverse_on_mismatch: bool = False,
     ) -> TransactionResult:
         """The whole safe check in one call. See :meth:`SepClient.verify_callback`."""

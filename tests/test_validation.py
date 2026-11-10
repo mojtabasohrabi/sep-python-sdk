@@ -5,6 +5,7 @@ from sep_sdk.validation import (
     normalize_card_hash,
     normalize_cell_number,
     normalize_iban,
+    normalize_session_key,
     require_http_url,
     require_int,
     require_text,
@@ -12,6 +13,40 @@ from sep_sdk.validation import (
 )
 
 VALID_IBAN = "IR062960000000100324200001"
+
+
+@pytest.mark.parametrize("value", [1, 2**63 - 1, "1", str(2**63 - 1), "000123"])
+def test_session_keys_become_json_integers(value: str | int) -> None:
+    key = normalize_session_key(value)
+    assert type(key) is int
+    assert 0 < key < 2**63
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        True,
+        False,
+        None,
+        0,
+        -1,
+        2**63,
+        1.5,
+        "",
+        "hex" * 10,
+        "a" * 32,
+        "1.0",
+        "+1",
+        " 1",
+        "۱",
+        "9" * 20,
+        str(2**63),
+    ],
+)
+def test_bad_session_keys_are_refused_without_echoing_the_value(value: object) -> None:
+    with pytest.raises(SepValidationError, match="session_key") as raised:
+        normalize_session_key(value)
+    assert str(raised.value) == "session_key must be a positive signed 64-bit integer."
 
 
 def test_digits_are_translated() -> None:

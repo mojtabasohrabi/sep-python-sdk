@@ -7,6 +7,7 @@ import hmac
 import re
 import secrets
 
+from sep_sdk.constants import MAX_SESSION_KEY
 from sep_sdk.errors import SepValidationError
 from sep_sdk.validation import require_text, to_ascii_digits
 
@@ -27,24 +28,26 @@ def hash_card_number(card_number: str) -> str:
 
 
 def generate_session_key() -> str:
-    """A fresh random ``TxnRandomSessionKey`` (32 hex characters).
+    """A fresh positive Int64 ``TxnRandomSessionKey``, returned as decimal text.
 
     Store it with the order, pass it as ``session_key`` when you create the token,
     and again when you verify. Saman then refuses a receipt that was not issued for
     that session, so one customer's receipt cannot be replayed on another order.
     """
-    return secrets.token_hex(16)
+    return str(secrets.randbelow(MAX_SESSION_KEY) + 1)
 
 
-def derive_session_key(secret: str | bytes, res_num: str) -> str:
+def derive_session_key(secret: str | bytes, res_num: str, *, namespace: str = "sep-session") -> str:
     """A ``TxnRandomSessionKey`` computed from a server secret and the order id.
 
     Use this instead of :func:`generate_session_key` when you would rather not
     store a key per order: recompute it at verify time from the same two inputs.
     Rotating ``secret`` between token and verify makes that payment unverifiable.
+    ``namespace`` preserves an application's existing HMAC domain during migration.
     """
     key = secret.encode("utf-8") if isinstance(secret, str) else secret
     if not key:
         raise SepValidationError("secret must not be empty.")
-    message = f"sep-session:{require_text('res_num', res_num)}".encode()
-    return hmac.new(key, message, hashlib.sha256).hexdigest()[:32]
+    message = f"{require_text('namespace', namespace)}:{require_text('res_num', res_num)}".encode()
+    digest = hmac.new(key, message, hashlib.sha256).digest()
+    return str((int.from_bytes(digest[:8], "big") >> 1) or 1)
