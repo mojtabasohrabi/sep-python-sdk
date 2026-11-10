@@ -1,13 +1,19 @@
 name: Publish to PyPI
 
-# Create a GitHub release (tag vX.Y.Z) to publish. Uses PyPI "trusted publishing":
+# Push a vX.Y.Z tag or publish a GitHub release to publish. Uses PyPI "trusted publishing":
 # no API token is stored in this repository. Configure the publisher once at
 # https://pypi.org/manage/account/publishing/ (owner, repository, workflow
 # "publish.yml", environment "pypi").
 
 on:
+  push:
+    tags: ["v*"]
   release:
     types: [published]
+
+concurrency:
+  group: pypi-${{ github.ref_name }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -23,7 +29,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Check tag matches package version
+        run: |
+          python - <<'PY'
+          import os
+          import runpy
+
+          version = runpy.run_path("src/sep_sdk/_version.py")["__version__"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{version}":
+              raise SystemExit(f"Release tag {tag!r} does not match package version {version!r}")
+          print(f"Publishing {version} from {tag}")
+          PY
       - run: pip install build twine
       - run: python -m build
       - run: twine check --strict dist/*
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # A tag push and its GitHub release may both trigger this workflow.
+          skip-existing: true
