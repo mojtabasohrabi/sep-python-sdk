@@ -1,0 +1,29 @@
+name: Publish to PyPI
+
+# Create a GitHub release (tag vX.Y.Z) to publish. Uses PyPI "trusted publishing":
+# no API token is stored in this repository. Configure the publisher once at
+# https://pypi.org/manage/account/publishing/ (owner, repository, workflow
+# "publish.yml", environment "pypi").
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - uses: pypa/gh-action-pypi-publish@release/v1

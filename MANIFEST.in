@@ -1,0 +1,4 @@
+include LICENSE README.md README.fa.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
+recursive-include examples *.py
+recursive-include tests *.py
+recursive-include src/sep_sdk py.typed
